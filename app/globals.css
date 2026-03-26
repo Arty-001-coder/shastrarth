@@ -1,26 +1,142 @@
-@import "tailwindcss";
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-family: system-ui, -apple-system, sans-serif; font-size: 16px; background: #f5f5f5 !important; color: #111 !important; }
+body { background: #f5f5f5 !important; color: #111 !important; min-height: 100vh; }
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ── Layout helpers ── */
+.page {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+.page-wide {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ── Card ── */
+.card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 1.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ── Typography ── */
+h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.4rem; }
+h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.75rem; }
+h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+p  { color: #555; font-size: 0.9rem; line-height: 1.6; }
+small { font-size: 0.78rem; color: #777; }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ── Form elements ── */
+label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 0.35rem;
+}
+input, select {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid #ccc;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+input:focus, select:focus { border-color: #3b82f6; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 7px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn:hover:not(:disabled) { opacity: 0.88; }
+.btn:active:not(:disabled) { transform: scale(0.98); }
+
+.btn-primary { background: #2563eb; color: #fff; }
+.btn-outline  { background: transparent; color: #2563eb; border: 1.5px solid #2563eb; }
+.btn-sm       { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
+
+/* Team colour variants */
+.btn-h { background: #7c3aed; color: #fff; }
+.btn-r { background: #0891b2; color: #fff; }
+.btn-f { background: #d97706; color: #fff; }
+.btn-unassign { background: #e5e7eb; color: #374151; }
+
+/* ── Error ── */
+.error { color: #dc2626; font-size: 0.83rem; margin-top: 0.4rem; }
+
+/* ── Divider ── */
+.divider { height: 1px; background: #e5e7eb; margin: 1.25rem 0; }
+
+/* ── Participant list ── */
+.participant-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  flex-wrap: wrap;
+}
+.participant-row:last-child { border-bottom: none; }
+
+/* ── Team badge ── */
+.badge {
+  display: inline-block;
+  padding: 0.18rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.badge-h { background: #ede9fe; color: #6d28d9; }
+.badge-r { background: #cffafe; color: #0e7490; }
+.badge-f { background: #fef3c7; color: #92400e; }
+.badge-none { background: #f3f4f6; color: #6b7280; }
+
+/* ── Team columns ── */
+.teams-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.team-col {
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 1rem;
+}
+.team-col-h { border-top: 3px solid #7c3aed; }
+.team-col-r { border-top: 3px solid #0891b2; }
+.team-col-f { border-top: 3px solid #d97706; }
+
+/* ── Session ID table (join page) ── */
+.id-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.id-table th { text-align: left; padding: 0.4rem 0.6rem; color: #555; font-weight: 600; border-bottom: 1px solid #e5e7eb; }
+.id-table td { padding: 0.45rem 0.6rem; border-bottom: 1px solid #f0f0f0; }
+.id-table tr:last-child td { border-bottom: none; }
+.id-table code { background: #f3f4f6; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.8rem; }
+
+/* ── Responsive ── */
+@media (max-width: 560px) {
+  .teams-grid { grid-template-columns: 1fr; }
+  h1 { font-size: 1.3rem; }
 }

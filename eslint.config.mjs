@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // False positive: flags Date.now() in event handlers as "impure during render".
+      // Event handlers are not called during the React render phase.
+      "react-hooks/purity": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
+
