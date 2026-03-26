@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { MOCK_SESSIONS } from "@/lib/store";
 import type { Session, Team, DiscussionEvent } from "@/lib/store";
 import { DiscussionFeed as SharedDiscussionFeed } from "@/components/DiscussionFeed";
-import { ArrowLeft, ChevronDown, Radio, Users, Loader2, RefreshCw, MessageSquare, FlaskConical, ScanSearch, Coins } from "lucide-react";
+import { ArrowLeft, Radio, Users, Loader2, RefreshCw, MessageSquare, FlaskConical, ScanSearch, Coins } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 /* ── Types ── */
@@ -144,10 +143,11 @@ export default function HostPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("setup");
   const [name, setName] = useState("");
-  const [sessionId, setSessionId] = useState(MOCK_SESSIONS[0].id);
+  const [question, setQuestion] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
+  const [ending, setEnding] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [collapsedTeams, setCollapsedTeams] = useState<Record<TeamKey, boolean>>({
     hypothesis: false,
@@ -175,12 +175,13 @@ export default function HostPage() {
 
   const handleStart = async () => {
     if (!name.trim()) { setError("Enter your name to continue."); return; }
+    if (!question.trim()) { setError("Enter a session question to continue."); return; }
     setError(""); setLoading(true);
     try {
       const res = await fetch("/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "host", name: name.trim(), sessionId }),
+        body: JSON.stringify({ action: "host", name: name.trim(), topic: question.trim() }),
       });
       const data: Session = await res.json();
       if (!res.ok) { setError((data as unknown as { error: string }).error ?? "Something went wrong."); return; }
@@ -232,6 +233,32 @@ export default function HostPage() {
     if (res.ok) setSession(await res.json());
   };
 
+  const endSession = async () => {
+    if (!session) return;
+    const ok = window.confirm(
+      `End session ${session.id}?\n\nThis will permanently delete the session, participants, and discussion from the database.`
+    );
+    if (!ok) return;
+    setEnding(true);
+    try {
+      const res = await fetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "end_session", sessionId: session.id }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError((data && typeof data.error === "string" ? data.error : null) ?? "Could not end session.");
+        return;
+      }
+      router.push("/");
+    } catch {
+      setError("Could not connect.");
+    } finally {
+      setEnding(false);
+    }
+  };
+
   /* ── SETUP SCREEN ── */
   if (step === "setup") {
     return (
@@ -247,7 +274,7 @@ export default function HostPage() {
           <Radio size={36} strokeWidth={1.5} color="#f97316" style={{ marginBottom: 16 }} />
           <h1 style={{ fontSize: "1.8rem", fontWeight: 800, letterSpacing: "-0.03em", marginBottom: "0.35rem" }}>Host a Session</h1>
           <p style={{ fontSize: "0.85rem", color: "#555", marginBottom: "2rem", lineHeight: 1.5 }}>
-            Choose a topic and open your session. Share the session ID with participants.
+            Enter your name and a question. We&apos;ll generate a session ID for you to share.
           </p>
 
           <div style={{ width: "100%", marginBottom: "1rem", textAlign: "left" }}>
@@ -257,16 +284,16 @@ export default function HostPage() {
           </div>
 
           <div style={{ width: "100%", marginBottom: "1.5rem", textAlign: "left" }}>
-            <label style={LABEL}>Session Topic</label>
-            <div style={{ position: "relative" }}>
-              <select style={{ ...INPUT, paddingRight: "2.4rem", appearance: "none", cursor: "pointer" }}
-                value={sessionId} onChange={e => setSessionId(e.target.value)}>
-                {MOCK_SESSIONS.map(m => (
-                  <option key={m.id} value={m.id}>{m.id} · {m.topic}</option>
-                ))}
-              </select>
-              <ChevronDown size={15} strokeWidth={2.5} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
-            </div>
+            <label style={LABEL}>Session Question</label>
+            <textarea
+              style={{ ...INPUT, minHeight: 96, resize: "vertical" }}
+              placeholder="e.g. Should AI systems have legal personhood?"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+            />
+            <p style={{ marginTop: 8, fontSize: "0.76rem", color: "#888", lineHeight: 1.4 }}>
+              This question becomes the session topic.
+            </p>
           </div>
 
           {error && <p style={{ color: "#dc2626", fontSize: "0.82rem", marginBottom: "0.75rem", textAlign: "left", width: "100%" }}>{error}</p>}
@@ -298,6 +325,26 @@ export default function HostPage() {
           <span style={{ fontWeight: 800, letterSpacing: "0.06em", color: "#f97316" }}>{session.id}</span>
         </div>
         <span style={{ fontSize: "0.8rem", color: "#555" }}>{session.hostName} · Host</span>
+        <button
+          onClick={endSession}
+          disabled={ending}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "#fff",
+            border: "2px solid #dc2626",
+            borderRadius: 8,
+            padding: "0.35rem 0.85rem",
+            fontSize: "0.82rem",
+            fontWeight: 800,
+            cursor: ending ? "not-allowed" : "pointer",
+            fontFamily: "inherit",
+            color: "#dc2626",
+          }}
+        >
+          {ending ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Ending…</> : "End Session"}
+        </button>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, border: "2px solid #000", borderRadius: 8, padding: "0.3rem 0.8rem", background: "#000", color: "#fff", fontSize: "0.8rem", fontWeight: 700 }}>
           {session.participants.length} joined
         </div>

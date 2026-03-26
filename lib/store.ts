@@ -1,5 +1,5 @@
 // lib/store.ts
-// In-memory session store — global singleton so it survives Next.js HMR
+// Shared types + mock session topics.
 
 export type Team = "hypothesis" | "review" | "funding" | null;
 
@@ -41,11 +41,3 @@ export const MOCK_SESSIONS: { id: string; topic: string }[] = [
   { id: "SHAS-004", topic: "Should consciousness determine rights?" },
   { id: "SHAS-005", topic: "Is open-source AI a public good or a threat?" },
 ];
-
-declare global {
-  var __shastrarth_store: Map<string, Session> | undefined;
-}
-
-export const store: Map<string, Session> =
-  global.__shastrarth_store ??
-  (global.__shastrarth_store = new Map());

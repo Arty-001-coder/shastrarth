@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MOCK_SESSIONS } from "@/lib/store";
 import { ArrowLeft, Users, ChevronDown, Loader2, FlaskConical, ScanSearch, Coins } from "lucide-react";
 
 type Step = "form" | "waiting";
@@ -75,6 +74,7 @@ export default function JoinPage() {
   const [participantId, setParticipantId] = useState<string>("");
   const [sessionTopic, setSessionTopic] = useState("");
   const [showIds, setShowIds] = useState(false);
+  const [availableSessions, setAvailableSessions] = useState<{ id: string; topic: string }[]>([]);
   const hasNavigatedRef = useRef(false);
 
   useEffect(() => {
@@ -131,6 +131,20 @@ export default function JoinPage() {
     } catch { setError("Could not connect to the server."); }
     finally { setLoading(false); }
   };
+
+  useEffect(() => {
+    if (!showIds) return;
+    (async () => {
+      try {
+        const res = await fetch("/api/session");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data.sessions)) setAvailableSessions(data.sessions);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [showIds]);
 
   /* ── WAITING ROOM ── */
   if (step === "waiting") {
@@ -215,14 +229,18 @@ export default function JoinPage() {
             <p style={{ fontSize: "0.78rem", color: "#666", marginBottom: "0.6rem" }}>
               Host must open the session first. Click a row to fill.
             </p>
-            {MOCK_SESSIONS.map(m => (
-              <div key={m.id}
-                onClick={() => setSessionId(m.id)}
-                style={{ display: "flex", gap: 10, alignItems: "center", padding: "0.4rem 0", borderBottom: "1px solid #eee", cursor: "pointer" }}>
-                <span style={{ fontWeight: 800, fontFamily: "monospace", fontSize: "0.8rem", background: "#000", color: "#f97316", padding: "0.1rem 0.45rem", borderRadius: 5 }}>{m.id}</span>
-                <span style={{ fontSize: "0.82rem", color: "#333" }}>{m.topic}</span>
-              </div>
-            ))}
+            {availableSessions.length === 0 ? (
+              <p style={{ color: "#888", fontSize: "0.82rem" }}>No open sessions found yet.</p>
+            ) : (
+              availableSessions.map(s => (
+                <div key={s.id}
+                  onClick={() => setSessionId(s.id)}
+                  style={{ display: "flex", gap: 10, alignItems: "center", padding: "0.4rem 0", borderBottom: "1px solid #eee", cursor: "pointer" }}>
+                  <span style={{ fontWeight: 800, fontFamily: "monospace", fontSize: "0.8rem", background: "#000", color: "#f97316", padding: "0.1rem 0.45rem", borderRadius: 5 }}>{s.id}</span>
+                  <span style={{ fontSize: "0.82rem", color: "#333" }}>{s.topic}</span>
+                </div>
+              ))
+            )}
           </div>
         )}
 
