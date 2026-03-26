@@ -62,37 +62,21 @@ function toApiEvent(e: DbEventRow): DiscussionEvent {
 async function fetchSessionByCode(sessionCode: string): Promise<Session | null> {
   const code = sessionCode.trim().toUpperCase();
 
-  const { data: s, error: sErr } = await supabaseAdmin
-    .from("sessions")
-    .select("id, session_code, topic, host_name, created_at")
-    .eq("session_code", code)
-    .maybeSingle<DbSessionRow>();
+  const { data, error } = await supabaseAdmin.rpc("get_session_bundle", { p_session_code: code });
+  if (error || !data) return null;
 
-  if (sErr || !s) return null;
+  // Expected shape from RPC (see SQL): { session: {...}, participants: [...], events: [...] }
+  const s = (data as { session: DbSessionRow; participants: DbParticipantRow[]; events: DbEventRow[] }).session;
+  const participants = (data as { participants: DbParticipantRow[] }).participants ?? [];
+  const events = (data as { events: DbEventRow[] }).events ?? [];
 
-  const [participantsRes, eventsRes] = await Promise.all([
-    supabaseAdmin
-      .from("participants")
-      .select("id, session_id, name, team, joined_at")
-      .eq("session_id", s.id)
-      .order("joined_at", { ascending: true })
-      .returns<DbParticipantRow[]>(),
-    supabaseAdmin
-      .from("discussion_events")
-      .select("id, session_id, participant_id, participant_name, team, kind, content, related_to, amount, created_at")
-      .eq("session_id", s.id)
-      .order("created_at", { ascending: true })
-      .returns<DbEventRow[]>(),
-  ]);
-
-  if (participantsRes.error || eventsRes.error) return null;
-
+  if (!s?.session_code) return null;
   return {
-    id: s.session_code, // keep API shape stable
+    id: s.session_code,
     topic: s.topic,
     hostName: s.host_name,
-    participants: (participantsRes.data ?? []).map(toApiParticipant),
-    events: (eventsRes.data ?? []).map(toApiEvent),
+    participants: participants.map(toApiParticipant),
+    events: events.map(toApiEvent),
     createdAt: toMs(s.created_at),
   };
 }
